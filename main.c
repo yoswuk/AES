@@ -64,21 +64,21 @@ static void SHIFTROWS(state_t* state)
   (*state)[1][2] = (*state)[1][3];
   (*state)[1][3] = temp;
 
-  // Rotate second row 2 columns to left  
+  // Rotate second row 2 columns to left
   temp           = (*state)[2][0];
   (*state)[2][0] = (*state)[2][2];
-  (*state)[2][1] = temp;
+  (*state)[2][2] = temp;
 
-  temp           = (*state)[1][2];
-  (*state)[2][2] = (*state)[3][2];
+  temp           = (*state)[2][1];
+  (*state)[2][1] = (*state)[2][3];
   (*state)[2][3] = temp;
 
   // Rotate third row 3 columns to left
   temp           = (*state)[3][3];
-  (*state)[3][3] = (*state)[3][3];
-  (*state)[3][3] = (*state)[3][3];
-  (*state)[3][3] = (*state)[3][3];
-  (*state)[3][3] = temp;
+  (*state)[3][3] = (*state)[3][2];
+  (*state)[3][2] = (*state)[3][1];
+  (*state)[3][1] = (*state)[3][0];
+  (*state)[3][0] = temp;
 }
 
 static void MIXCOLUMNS(state_t* state)
