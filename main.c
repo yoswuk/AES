@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdint.h>
 
+
+//https://github.com/kokke/tiny-AES-c/blob/master/aes.c
 #define AES128
 
 #ifdef AES128
@@ -41,6 +43,19 @@ static const uint8_t SBOX[256] = {
 
 
 //KEYEXPANSION()
+static void KEYEXPANSION(uint8_t* key)
+{
+    for (int i = 0; i < Nk; i++)
+    {
+        w[i] = key[4*i];
+    }
+    
+}
+
+static uint8_t XTIMES(uint8_t x)
+{
+  return ((x<<1) ^ (((x>>7) & 1) * 0x1b));
+}
 
 static void SUBBYTES(state_t* state)
 {
@@ -83,15 +98,44 @@ static void SHIFTROWS(state_t* state)
 
 static void MIXCOLUMNS(state_t* state)
 {
+    uint8_t Tmp, Tm, T;
 
+    for(int c = 0; c < 4; c++)
+    {
+        T = (*state)[0][c];
+
+        Tmp = (*state)[0][c] ^ (*state)[1][c] ^ (*state)[2][c] ^ (*state)[3][c];
+
+        Tm  = (*state)[0][c] ^ (*state)[1][c];
+        Tm  = XTIMES(Tm);
+        (*state)[0][c] ^= Tmp ^ Tm;
+
+        Tm  = (*state)[1][c] ^ (*state)[2][c];
+        Tm  = XTIMES(Tm);
+        (*state)[1][c] ^= Tmp ^ Tm;
+
+        Tm  = (*state)[2][c] ^ (*state)[3][c];
+        Tm  = XTIMES(Tm);
+        (*state)[2][c] ^= Tmp ^ Tm;
+        
+        Tm  = (*state)[3][c] ^ T;
+        Tm  = XTIMES(Tm);
+        (*state)[3][c] ^= Tmp ^ Tm;
+    }
 }
 
-static void ADDROUNDKEY(state_t* state, key_t* key)
+static void ADDROUNDKEY(state_t* state, uint8_t* w)
 {
-
+    for (int c = 0; c < 4; c++)
+    {
+        (*state)[0][c] ^= w[0+c];
+        (*state)[0][c] ^= w[1+c];
+        (*state)[0][c] ^= w[2+c];
+        (*state)[0][c] ^= w[3+c];                        
+    }
 }
 
-void CIPHER(uint8_t* out, uint8_t* in, uint8_t* key);
+void CIPHER(uint8_t* out, uint8_t* in, uint8_t* key)
 {
     state_t state;
 
@@ -110,7 +154,7 @@ void CIPHER(uint8_t* out, uint8_t* in, uint8_t* key);
         SUBBYTES(&state);
         SHIFTROWS(&state);
         MIXCOLUMNS(&state);
-        ADDROUNDKEY(&state, w + 4 * i)
+        ADDROUNDKEY(&state, w + 4 * i);
     }
 
     SUBBYTES(&state);
@@ -128,22 +172,23 @@ void CIPHER(uint8_t* out, uint8_t* in, uint8_t* key);
 
 
 //INVCIPHER()
-void INVCIPHER(state_t* state);
+void INVCIPHER(state_t* state)
 {
     for (int i = 0; i < Nr; i++)
     {
         INVSHIFTROWS(state);
         INVSUBBYTES(state);
         ADDROUNDKEY(state);
-        INVMIXCOLUMNS(state, w + 4 * i)
+        INVMIXCOLUMNS(state, w + 4 * i);
     }
 
-    state = INVSHIFTROWS(state);
-    state = INVSUBBYTES(state);
-    state = ADDROUNDKEY(state, w);
+    INVSHIFTROWS(state);
+    INVSUBBYTES(state);
+    ADDROUNDKEY(state, w);
 
     return state;
 }
+
 int INVSHIFTROWS()
 {
 
